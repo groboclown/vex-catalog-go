@@ -12,5 +12,6 @@ require (
 
 require (
 	github.com/kr/text v0.2.0 // indirect
+	github.com/ossf/osv-schema/bindings/go v0.0.0-20251012234424-434020c6442f // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

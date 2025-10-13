@@ -38,6 +38,12 @@ The template format consists of a Unicode string, with special properties around
   * Following the same kind of rules above, `{n@x}`, `{n@-x}`, and `{n@x:y}` refers instead to "segments" of the text found from `n`.  Here, a "segment" is a collection of text separated by one or more characters from within the set `.-_,:/@`.  If the project version number is `v13.6-beta`, then `{VERSION@1}` is `v13`, `{VERSION@1:2}` is `v13.6`, `{VERSION@2:3}` is `6-beta`, and `{VERSION@1:4}` is `v13.6-beta`.
 
 
+## Implementation
+
+The Go implementation presented here uses a simple interface to permit concurrent loading of VEX documents.  The caller may implement caching and other techniques, as may the back-end.
+
+The implementation does not attempt to construct a unified idea of a VEX statement on top of the interface.  Instead, it contains all the known formats, with their common implementations, in a single structure.
+
 
 # License
 

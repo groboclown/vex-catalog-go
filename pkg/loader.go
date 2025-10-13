@@ -6,6 +6,7 @@ import (
 	"github.com/CycloneDX/cyclonedx-go"
 	"github.com/openvex/go-vex/pkg/csaf"
 	"github.com/openvex/go-vex/pkg/vex"
+	"github.com/ossf/osv-schema/bindings/go/osvschema"
 	"github.com/package-url/packageurl-go"
 )
 
@@ -13,6 +14,7 @@ type VexDocument struct {
 	CycloneDX *cyclonedx.BOM
 	Csaf      *csaf.CSAF
 	OpenVex   *vex.VEX
+	Osv       *osvschema.Vulnerability
 }
 
 // VexLoader defines the interface for loading VEX documents associated with a given package URL.
