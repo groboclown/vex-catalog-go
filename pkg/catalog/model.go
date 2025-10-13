@@ -3,7 +3,7 @@ package catalog
 import (
 	"time"
 
-	"github.com/groboclown/vex-catalog-go/pkg/template"
+	"github.com/groboclown/vex-catalog-go/pkg/catalog/template"
 	"github.com/package-url/packageurl-go"
 )
 
