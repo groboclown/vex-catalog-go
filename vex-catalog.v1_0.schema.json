@@ -1,0 +1,212 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "https://github.com/groboclown/vex-catalog-go/blob/main/vex-catalog.v1_0.schema.json",
+    "title": "VEX Catalog",
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+        "$schema",
+        "catalog"
+    ],
+    "properties": {
+        "$schema": {
+            "type": "string",
+            "const": "https://github.com/groboclown/vex-catalog-go/blob/main/vex-catalog.v1_0.schema.json",
+            "description": "The VEX catalog schema ID."
+        },
+        "$comment": { "$ref": "#/$defs/Comment" },
+        "metadata": {
+            "$ref": "#/$defs/Metadata",
+            "description": "Metadata about the document itself."
+        },
+        "catalogs": {
+            "type": "array",
+            "description": "The list of VEX catalogs contained within this document.",
+            "minItems": 1,
+            "maxItems": 10000,
+            "items": { "$ref": "#/$defs/Catalog" }
+        }
+    },
+    "$defs": {
+        "Catalog": {
+            "oneOf": [
+                { "$ref": "#/$defs/Catalog-Single" },
+                { "$ref": "#/$defs/Catalog-Template" }
+            ]
+        },
+
+        "Catalog-Single": {
+            "type": "object",
+            "title": "Single VEX Document",
+            "description": "Stores a single VEX document.  Used for projects that only maintain a single VEX document.",
+            "additionalProperties": false,
+            "required": [
+                "kind",
+                "purls",
+                "file_format",
+                "url"
+            ],
+            "properties": {
+                "$comment": { "$ref": "#/$defs/Comment" },
+                "kind": {
+                    "type": "string",
+                    "const": "single",
+                    "description": "Indicates that this catalog contains a single VEX document."
+                },
+                "purls": { "$ref": "#/$defs/Purl-List" },
+                "file_format": { "$ref": "#/$defs/FileFormat" },
+                "url": {
+                    "type": "string",
+                    "format": "uri",
+                    "description": "The URL where the VEX document can be found.  As this references a single document, this must be a direct link to the document itself.",
+                    "examples": [
+                        "https://example.com/vex.json"
+                    ]
+                }
+            }
+        },
+        "Catalog-Template": {
+            "type": "object",
+            "title": "Product and Vulnerability Indexed Catalog",
+            "description": "Stores VEX documents indexed by vulnerability identifier and / or the PURL components.",
+            "additionalProperties": false,
+            "required": [
+                "kind",
+                "file_format",
+                "url_template"
+            ],
+            "properties": {
+                "$comment": { "$ref": "#/$defs/Comment" },
+                "kind": {
+                    "type": "string",
+                    "const": "template",
+                    "description": "Indicates that this catalog contains multiple VEX documents, indexed by vulnerability identifier and / or the PURL components."
+                },
+                "purls": { "$ref": "#/$defs/Purl-List" },
+                "file_format": { "$ref": "#/$defs/FileFormat" },
+                "vulnerability_type": {
+                    "type": "string",
+                    "description": "The type of vulnerability identifier used in the URL template, if any.  This is used to indicate the kind of vulnerabilities referenced in the repository.  It must contain only lower-case characters.",
+                    "examples": [
+                        "cve",
+                        "ghsa",
+                        "osv"
+                    ]
+                },
+                "url_template": { "$ref": "#/$defs/TemplateUrl" }
+            }
+        },
+
+        "FileFormat": {
+            "type": "object",
+            "title": "File Format",
+            "description": "The file format of the VEX documents contained within the location.",
+            "additionalProperties": false,
+            "required": [
+                "standard"
+            ],
+            "properties": {
+                "$comment": { "$ref": "#/$defs/Comment" },
+                "standard": {
+                    "type": "string",
+                    "description": "The document format standards body.  All lowercase.",
+                    "examples": [
+                        "csaf",
+                        "openvex",
+                        "cyclonedx"
+                    ]
+                },
+                "version": {
+                    "type": "string",
+                    "description": "The version of the document format standard.  While not required, it is strongly recommended to provide this value.",
+                    "examples": [
+                        "2.0",
+                        "1.0",
+                        "1.4"
+                    ]
+                },
+                "compression": {
+                    "type": "string",
+                    "description": "The compression algorithm used to compress the document, if any.",
+                    "examples": [
+                        "none",
+                        "gzip",
+                        "zstd",
+                        "xz",
+                        "bzip2"
+                    ]
+                }
+            }
+        },
+        "Metadata": {
+            "type": "object",
+            "title": "Document Metadata",
+            "description": "Metadata about the document itself.",
+            "additionalProperties": false,
+            "required": [
+                "id",
+                "last_updated",
+                "authors"
+            ],
+            "properties": {
+                "$comment": { "$ref": "#/$defs/Comment" },
+                "id": {
+                    "type": "string",
+                    "description": "A unique identifier for the document.  This does not need to change when the document is updated, but it must be unique across all documents.",
+                    "examples": [
+                        "https://example.com/vex-catalogs/acme-corp/vex-catalog.json"
+                    ]
+                },
+                "last_updated": {
+                    "$ref": "#/$defs/DateTime",
+                    "description": "The date and time that this catalog was last updated."
+                },
+                "authors": {
+                    "type": "array",
+                    "description": "Contact information for the maintainers of this document.",
+                    "minItems": 1,
+                    "items": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 1000
+                    }
+                }
+            }
+        },
+        "Purl-List": {
+            "type": "array",
+            "description": "A list of Package URLs.",
+            "minItems": 1,
+            "maxItems": 10000,
+            "items": { "$ref": "#/$defs/Purl" }
+        },
+        "Purl": {
+            "type": "string",
+            "description": "A Package URL (purl) as defined at https://github.com/package-url/purl-spec ; this must contain the package environment and name, and optionally the version.  Any other part is ignored.  It may include a '*' in the version to indicate a wildcard match.",
+            "examples": [
+                "pkg:npm/%40angular/animation",
+                "pkg:maven/org.apache.commons/commons-lang3@3.12.*"
+            ],
+            "pattern": "^pkg:[^\\s]+$"
+        },
+        "TemplateUrl": {
+            "type": "string",
+            "description": "A URL template that uses the templating rules to format the final URL based on the PURL elements and the vulnerability."
+        },
+        "Comment": {
+            "type": "string",
+            "description": "A comment in the document for humans to read.",
+            "minLength": 0,
+            "maxLength": 4000
+        },
+        "DateTime": {
+            "type": "string",
+            "format": "date-time",
+            "description": "A date and time in RFC 3339 format, section 5.6.",
+            "examples": [
+                "2024-01-01T12:00:00Z",
+                "2024-01-01T12:00:00-08:00"
+            ]
+        }
+    }
+}
