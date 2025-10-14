@@ -3,9 +3,11 @@ package catalog
 import (
 	"encoding/json"
 	"io"
+	"net/http"
 	"time"
 
 	"github.com/groboclown/vex-catalog-go/pkg/catalog/template"
+	"github.com/groboclown/vex-catalog-go/pkg/internal"
 	"github.com/package-url/packageurl-go"
 )
 
@@ -28,11 +30,24 @@ func FromJsonReader(r io.Reader) (*VexCatalogDoc, error) {
 	return &doc, nil
 }
 
-func ToJsonBytes(doc *VexCatalogDoc) ([]byte, error) {
+// DownloadJsonVexCatalog downloads the catalog from the given URL using the provided HTTP client.
+// It returns the parsed VexRepository, the time it was last modified, and any error that occurred.
+// If the time can't be determined, the current time is returned.
+func DownloadJsonVexCatalog(url string, client http.Client) (*VexCatalogDoc, time.Time, error) {
+	body, updatedAt, err := internal.UrlModGet(url, client)
+	if err != nil {
+		return nil, time.Time{}, err
+	}
+	defer body.Close()
+	index, err := FromJsonReader(body)
+	return index, updatedAt, err
+}
+
+func (doc *VexCatalogDoc) ToJsonBytes() ([]byte, error) {
 	return json.MarshalIndent(doc, "", " ")
 }
 
-func ToJsonWriter(doc *VexCatalogDoc, w io.Writer) error {
+func (doc *VexCatalogDoc) ToJsonWriter(w io.Writer) error {
 	enc := json.NewEncoder(w)
 	enc.SetIndent("", " ")
 	return enc.Encode(doc)

@@ -1,0 +1,17 @@
+{
+    "$schema": "https://raw.githubusercontent.com/groboclown/vex-catalog-go/refs/heads/main/vex-catalog.v1_0.schema.json",
+    "metadata": {
+        "id": "aquasecurity-vexhub",
+        "last_updated": "2025-10-12T00:00:00Z",
+        "authors": [
+            "Aqua Security Ltd."
+        ]
+    },
+    "catalogs": [
+        {
+            "kind": "vex-repo",
+            "$comment": "While the PURL list isn't necessary, it makes determination of whether to use this catalog faster.",
+            "url": "https://raw.githubusercontent.com/aquasecurity/vexhub/refs/heads/main/vex-repository.json"
+        }
+    ]
+}

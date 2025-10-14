@@ -3,23 +3,12 @@ package pkg
 import (
 	"context"
 
-	"github.com/CycloneDX/cyclonedx-go"
-	"github.com/openvex/go-vex/pkg/csaf"
-	"github.com/openvex/go-vex/pkg/vex"
-	"github.com/ossf/osv-schema/bindings/go/osvschema"
 	"github.com/package-url/packageurl-go"
 )
 
-type VexDocument struct {
-	CycloneDX *cyclonedx.BOM
-	Csaf      *csaf.CSAF
-	OpenVex   *vex.VEX
-	Osv       *osvschema.Vulnerability
-}
-
 // VexLoader defines the interface for loading VEX documents associated with a given package URL.
 // The loader is designed to run in parallel.
-type VexLoader interface {
+type VexLoader[T any] interface {
 	// LoadVex retrieves VEX documents related to the specified package URL.
 	// The VEX may have its own method of discovering the VEX corresponding to the Purl, which
 	// may include loading multiple VEX documents.
@@ -30,8 +19,11 @@ type VexLoader interface {
 	LoadVex(
 		ctx context.Context,
 		purl *packageurl.PackageURL,
-		cveId string,
-		vexChan chan<- *VexDocument,
+		vulnId string,
+		vexChan chan<- T,
 		errChan chan<- error,
 	)
+
+	// Close cleans up any resources used by the loader.
+	Close() error
 }

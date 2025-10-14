@@ -1,46 +1,79 @@
 package catalog
 
 import (
-	"context"
 	"net/http"
+	"time"
 
 	"github.com/groboclown/vex-catalog-go/pkg"
-	"github.com/package-url/packageurl-go"
+	"github.com/groboclown/vex-catalog-go/pkg/cache"
+	"github.com/groboclown/vex-catalog-go/pkg/vexloader"
 )
 
-type VexCatalogLoader struct {
-	catalog *VexCatalogDoc
-	client  http.Client
-}
-
-var _ pkg.VexLoader = (*VexCatalogLoader)(nil)
-
-func NewVexCatalogLoader(catalog *VexCatalogDoc, client http.Client) *VexCatalogLoader {
-	return &VexCatalogLoader{
-		catalog: catalog,
-		client:  client,
+func NewVexCatalogLoader[T any](
+	doc *VexCatalogDoc,
+	loader vexloader.VexMarshaller[T],
+	cache cache.PackageCacheFactory,
+	updateInterval time.Duration,
+	client http.Client,
+) (*pkg.ProxyVexLoader[T], error) {
+	if doc == nil {
+		return nil, nil
 	}
-}
-
-func (v *VexCatalogLoader) LoadVex(
-	ctx context.Context,
-	purl *packageurl.PackageURL,
-	cveId string,
-	vexChan chan<- *pkg.VexDocument,
-	errChan chan<- error,
-) {
-	if v == nil || v.catalog == nil {
-		return
-	}
-	for _, cat := range v.catalog.Catalogs {
-		go func(cat *Catalog) {
-			vexDoc, err := cat.LoadVex(v.client, purl, cveId)
+	loaders := make([]pkg.VexLoader[T], 0, len(doc.Catalogs))
+	for _, catalog := range doc.Catalogs {
+		switch catalog.Kind {
+		case "single":
+			singleLoader := NewVexSingleCatalogLoader(&catalog, loader, cache, updateInterval, client)
+			if singleLoader != nil {
+				loaders = append(loaders, singleLoader)
+			}
+		case "template":
+			templateLoader := NewVexTemplateCatalogLoader(&catalog, loader, cache, updateInterval, client)
+			if templateLoader != nil {
+				loaders = append(loaders, templateLoader)
+			}
+		case "vex-repo":
+			repoLoader, err := NewVexRepoCatalogLoader(&catalog, loader, cache, client)
 			if err != nil {
-				errChan <- err
+				return nil, err
 			}
-			if vexDoc != nil {
-				vexChan <- vexDoc
+			if repoLoader != nil {
+				loaders = append(loaders, repoLoader)
 			}
-		}(&cat)
+		}
 	}
+	if len(loaders) == 0 {
+		return nil, nil
+	}
+	return pkg.NewProxyVexLoader(loaders...), nil
+}
+
+// VexCatalogLoaderFromUrl creates a new VEX catalog loader by fetching the catalog from the URL.
+// This helper uses the provided HTTP client to fetch the catalog.
+func VexCatalogLoaderFromUrl[T any](
+	catalogUrl string,
+	loader vexloader.VexMarshaller[T],
+	cache cache.PackageCacheFactory,
+	updateInterval time.Duration,
+	client http.Client,
+) (*pkg.ProxyVexLoader[T], error) {
+	resp, err := client.Get(catalogUrl)
+	if err != nil {
+		return nil, err
+	}
+	if resp.StatusCode != http.StatusOK {
+		return nil, nil
+	}
+	defer resp.Body.Close()
+	doc, err := FromJsonReader(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+	return NewVexCatalogLoader(
+		doc,
+		loader,
+		cache,
+		updateInterval,
+		client,
+	)
 }

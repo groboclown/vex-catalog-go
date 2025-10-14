@@ -50,6 +50,7 @@ func ParsePattern(p string) Pattern {
 	partStartPos := 0
 	startPos := 0
 	endPos := 0
+	encoding := encodingNone
 
 	// While the full parser can be brought into this loop, it's split into smaller
 	// sections for clarity.
@@ -74,10 +75,16 @@ func ParsePattern(p string) Pattern {
 				// to this character, and set the mode to a plain text.
 				mode = modePlainText
 				partStartPos = i
+			} else if ch == '%' {
+				// Start of a {%} expression
+				mode = modeExprText
+				partStartPos = i - 1
+				encoding = encodingPercent
 			} else if ch >= 'A' && ch <= 'Z' {
 				// Start of a {} expression
 				mode = modeExprText
 				partStartPos = i - 1
+				encoding = encodingNone
 			} else {
 				// Invalid expression.  Treat as plain text.
 				// This includes '{}' (empty) expressions.
@@ -88,7 +95,7 @@ func ParsePattern(p string) Pattern {
 			// Inside a {}, before the first ':' or '@'
 			if ch == '}' {
 				// Wrap up the packet
-				parts = append(parts, parseStraightPatternPart(runes[partStartPos+1:i]))
+				parts = append(parts, parseStraightPatternPart(runes[partStartPos+1:i], encoding))
 				mode = modePlainText
 				partStartPos = i + 1
 			} else if ch == ':' {
@@ -116,7 +123,7 @@ func ParsePattern(p string) Pattern {
 			// Inside a {}, after a ':' and before a second ':' or '}'
 			if ch == '}' {
 				// Wrap up the packet
-				parts = append(parts, parsePrefixPatternPart(runes[partStartPos+1:startPos-1], runes[startPos:i]))
+				parts = append(parts, parsePrefixPatternPart(runes[partStartPos+1:startPos-1], encoding, runes[startPos:i]))
 				mode = modePlainText
 				partStartPos = i + 1
 			} else if ch == ':' {
@@ -130,7 +137,7 @@ func ParsePattern(p string) Pattern {
 		case modeCharSuffix:
 			if ch == '}' {
 				// Wrap up the packet
-				parts = append(parts, parseSuffixPatternPart(runes[partStartPos+1:startPos-2], runes[startPos:i]))
+				parts = append(parts, parseSuffixPatternPart(runes[partStartPos+1:startPos-2], encoding, runes[startPos:i]))
 				mode = modePlainText
 				partStartPos = i + 1
 			} else if ch < '0' || ch > '9' {
@@ -141,7 +148,7 @@ func ParsePattern(p string) Pattern {
 			// Inside a {}, after a second ':' and before a '}'
 			if ch == '}' {
 				// Wrap up the packet
-				parts = append(parts, parseSubstringPatternPart(runes[partStartPos+1:startPos-1], runes[startPos:i], runes[endPos:i]))
+				parts = append(parts, parseSubstringPatternPart(runes[partStartPos+1:startPos-1], encoding, runes[startPos:endPos-1], runes[endPos:i]))
 				mode = modePlainText
 				partStartPos = i + 1
 			} else if ch < '0' || ch > '9' {
@@ -165,7 +172,7 @@ func ParsePattern(p string) Pattern {
 			// Inside a {}, a '@' and before a ':' or '}'
 			if ch == '}' {
 				// Wrap up the packet
-				parts = append(parts, parseSegmentPrefixPatternPart(runes[partStartPos+1:startPos-1], runes[startPos:i]))
+				parts = append(parts, parseSegmentPrefixPatternPart(runes[partStartPos+1:startPos-1], encoding, runes[startPos:i]))
 				mode = modePlainText
 				partStartPos = i + 1
 			} else if ch == ':' {
@@ -179,7 +186,7 @@ func ParsePattern(p string) Pattern {
 		case modeSegmentSuffix:
 			if ch == '}' {
 				// Wrap up the packet
-				parts = append(parts, parseSegmentSuffixPatternPart(runes[partStartPos+1:startPos-2], runes[startPos:i]))
+				parts = append(parts, parseSegmentSuffixPatternPart(runes[partStartPos+1:startPos-2], encoding, runes[startPos:i]))
 				mode = modePlainText
 				partStartPos = i + 1
 			} else if ch < '0' || ch > '9' {
@@ -190,7 +197,7 @@ func ParsePattern(p string) Pattern {
 			// Inside a {}, after a second ':' and before a '}'
 			if ch == '}' {
 				// Wrap up the packet
-				parts = append(parts, parseSegmentSubstringPatternPart(runes[partStartPos+1:startPos-1], runes[startPos:i], runes[endPos:i]))
+				parts = append(parts, parseSegmentSubstringPatternPart(runes[partStartPos+1:startPos-1], encoding, runes[startPos:endPos-1], runes[endPos:i]))
 				mode = modePlainText
 				partStartPos = i + 1
 			} else if ch < '0' || ch > '9' {
@@ -211,24 +218,24 @@ func ParsePattern(p string) Pattern {
 	}
 }
 
-func parseStraightPatternPart(textPart []rune) PatternPart {
+func parseStraightPatternPart(textPart []rune, encoding encodingType) PatternPart {
 	switch extractTextFrom(textPart) {
 	case extractVulnId:
-		return mkEscapePatternPart(mkVulnPatternPart())
+		return mkEncodingPatternPart(mkVulnPatternPart(), encoding)
 	case extractEnv:
-		return mkEscapePatternPart(mkEnvPatternPart())
+		return mkEncodingPatternPart(mkEnvPatternPart(), encoding)
 	case extractName:
-		return mkEscapePatternPart(mkNamePatternPart())
+		return mkEncodingPatternPart(mkNamePatternPart(), encoding)
 	case extractModule:
-		return mkEscapePatternPart(mkModulePatternPart())
+		return mkEncodingPatternPart(mkModulePatternPart(), encoding)
 	case extractVersion:
-		return mkEscapePatternPart(mkVersionPatternPart())
+		return mkEncodingPatternPart(mkVersionPatternPart(), encoding)
 	default:
-		return mkStringPatternPart(string(textPart))
+		return mkStringPatternPart("{" + string(textPart) + "}")
 	}
 }
 
-func parsePrefixPatternPart(textPart []rune, countText []rune) PatternPart {
+func parsePrefixPatternPart(textPart []rune, encoding encodingType, countText []rune) PatternPart {
 	count, ok := atoi(countText)
 	if !ok || count <= 0 {
 		// Invalid count; treat as a string.
@@ -236,21 +243,21 @@ func parsePrefixPatternPart(textPart []rune, countText []rune) PatternPart {
 	}
 	switch extractTextFrom(textPart) {
 	case extractVulnId:
-		return mkEscapePatternPart(mkRunePrefixPatternPart(mkVulnPatternPart(), count))
+		return mkEncodingPatternPart(mkRunePrefixPatternPart(mkVulnPatternPart(), count), encoding)
 	case extractEnv:
-		return mkEscapePatternPart(mkRunePrefixPatternPart(mkEnvPatternPart(), count))
+		return mkEncodingPatternPart(mkRunePrefixPatternPart(mkEnvPatternPart(), count), encoding)
 	case extractName:
-		return mkEscapePatternPart(mkRunePrefixPatternPart(mkNamePatternPart(), count))
+		return mkEncodingPatternPart(mkRunePrefixPatternPart(mkNamePatternPart(), count), encoding)
 	case extractModule:
-		return mkEscapePatternPart(mkRunePrefixPatternPart(mkModulePatternPart(), count))
+		return mkEncodingPatternPart(mkRunePrefixPatternPart(mkModulePatternPart(), count), encoding)
 	case extractVersion:
-		return mkEscapePatternPart(mkRunePrefixPatternPart(mkVersionPatternPart(), count))
+		return mkEncodingPatternPart(mkRunePrefixPatternPart(mkVersionPatternPart(), count), encoding)
 	default:
-		return mkStringPatternPart(string(textPart))
+		return mkStringPatternPart("{" + string(textPart) + ":" + string(countText) + "}")
 	}
 }
 
-func parseSuffixPatternPart(textPart []rune, countText []rune) PatternPart {
+func parseSuffixPatternPart(textPart []rune, encoding encodingType, countText []rune) PatternPart {
 	count, ok := atoi(countText)
 	if !ok || count <= 0 {
 		// Invalid count; treat as a string.
@@ -258,48 +265,44 @@ func parseSuffixPatternPart(textPart []rune, countText []rune) PatternPart {
 	}
 	switch extractTextFrom(textPart) {
 	case extractVulnId:
-		return mkEscapePatternPart(mkRuneSuffixPatternPart(mkVulnPatternPart(), count))
+		return mkEncodingPatternPart(mkRuneSuffixPatternPart(mkVulnPatternPart(), count), encoding)
 	case extractEnv:
-		return mkEscapePatternPart(mkRuneSuffixPatternPart(mkEnvPatternPart(), count))
+		return mkEncodingPatternPart(mkRuneSuffixPatternPart(mkEnvPatternPart(), count), encoding)
 	case extractName:
-		return mkEscapePatternPart(mkRuneSuffixPatternPart(mkNamePatternPart(), count))
+		return mkEncodingPatternPart(mkRuneSuffixPatternPart(mkNamePatternPart(), count), encoding)
 	case extractModule:
-		return mkEscapePatternPart(mkRuneSuffixPatternPart(mkModulePatternPart(), count))
+		return mkEncodingPatternPart(mkRuneSuffixPatternPart(mkModulePatternPart(), count), encoding)
 	case extractVersion:
-		return mkEscapePatternPart(mkRuneSuffixPatternPart(mkVersionPatternPart(), count))
+		return mkEncodingPatternPart(mkRuneSuffixPatternPart(mkVersionPatternPart(), count), encoding)
 	default:
-		return mkStringPatternPart(string(textPart))
+		return mkStringPatternPart("{" + string(textPart) + ":-" + string(countText) + "}")
 	}
 }
 
-func parseSubstringPatternPart(textPart []rune, startText, endText []rune) PatternPart {
-	start, ok := atoi(startText)
-	if !ok || start <= 0 {
-		// Invalid count; treat as a string.
-		return mkStringPatternPart("{" + string(textPart) + ":" + string(startText) + ":" + string(endText) + "}")
-	}
-	end, ok := atoi(endText)
-	if !ok || end <= 0 || start > end {
+func parseSubstringPatternPart(textPart []rune, encoding encodingType, startText, endText []rune) PatternPart {
+	start, ok1 := atoi(startText)
+	end, ok2 := atoi(endText)
+	if !ok1 || !ok2 || start <= 0 || end <= 0 || start > end {
 		// Invalid count; treat as a string.
 		return mkStringPatternPart("{" + string(textPart) + ":" + string(startText) + ":" + string(endText) + "}")
 	}
 	switch extractTextFrom(textPart) {
 	case extractVulnId:
-		return mkEscapePatternPart(mkRuneSubstringPatternPart(mkVulnPatternPart(), start, end))
+		return mkEncodingPatternPart(mkRuneSubstringPatternPart(mkVulnPatternPart(), start, end), encoding)
 	case extractEnv:
-		return mkEscapePatternPart(mkRuneSubstringPatternPart(mkEnvPatternPart(), start, end))
+		return mkEncodingPatternPart(mkRuneSubstringPatternPart(mkEnvPatternPart(), start, end), encoding)
 	case extractName:
-		return mkEscapePatternPart(mkRuneSubstringPatternPart(mkNamePatternPart(), start, end))
+		return mkEncodingPatternPart(mkRuneSubstringPatternPart(mkNamePatternPart(), start, end), encoding)
 	case extractModule:
-		return mkEscapePatternPart(mkRuneSubstringPatternPart(mkModulePatternPart(), start, end))
+		return mkEncodingPatternPart(mkRuneSubstringPatternPart(mkModulePatternPart(), start, end), encoding)
 	case extractVersion:
-		return mkEscapePatternPart(mkRuneSubstringPatternPart(mkVersionPatternPart(), start, end))
+		return mkEncodingPatternPart(mkRuneSubstringPatternPart(mkVersionPatternPart(), start, end), encoding)
 	default:
-		return mkStringPatternPart(string(textPart))
+		return mkStringPatternPart("{" + string(textPart) + ":" + string(startText) + ":" + string(endText) + "}")
 	}
 }
 
-func parseSegmentPrefixPatternPart(textPart []rune, countText []rune) PatternPart {
+func parseSegmentPrefixPatternPart(textPart []rune, encoding encodingType, countText []rune) PatternPart {
 	count, ok := atoi(countText)
 	if !ok || count <= 0 {
 		// Invalid count; treat as a string.
@@ -307,21 +310,21 @@ func parseSegmentPrefixPatternPart(textPart []rune, countText []rune) PatternPar
 	}
 	switch extractTextFrom(textPart) {
 	case extractVulnId:
-		return mkEscapePatternPart(mkSegmentPrefixPatternPart(mkVulnPatternPart(), count))
+		return mkEncodingPatternPart(mkSegmentPrefixPatternPart(mkVulnPatternPart(), count), encoding)
 	case extractEnv:
-		return mkEscapePatternPart(mkSegmentPrefixPatternPart(mkEnvPatternPart(), count))
+		return mkEncodingPatternPart(mkSegmentPrefixPatternPart(mkEnvPatternPart(), count), encoding)
 	case extractName:
-		return mkEscapePatternPart(mkSegmentPrefixPatternPart(mkNamePatternPart(), count))
+		return mkEncodingPatternPart(mkSegmentPrefixPatternPart(mkNamePatternPart(), count), encoding)
 	case extractModule:
-		return mkEscapePatternPart(mkSegmentPrefixPatternPart(mkModulePatternPart(), count))
+		return mkEncodingPatternPart(mkSegmentPrefixPatternPart(mkModulePatternPart(), count), encoding)
 	case extractVersion:
-		return mkEscapePatternPart(mkSegmentPrefixPatternPart(mkVersionPatternPart(), count))
+		return mkEncodingPatternPart(mkSegmentPrefixPatternPart(mkVersionPatternPart(), count), encoding)
 	default:
-		return mkStringPatternPart(string(textPart))
+		return mkStringPatternPart("{" + string(textPart) + "@" + string(countText) + "}")
 	}
 }
 
-func parseSegmentSuffixPatternPart(textPart []rune, countText []rune) PatternPart {
+func parseSegmentSuffixPatternPart(textPart []rune, encoding encodingType, countText []rune) PatternPart {
 	count, ok := atoi(countText)
 	if !ok || count <= 0 {
 		// Invalid count; treat as a string.
@@ -329,44 +332,40 @@ func parseSegmentSuffixPatternPart(textPart []rune, countText []rune) PatternPar
 	}
 	switch extractTextFrom(textPart) {
 	case extractVulnId:
-		return mkEscapePatternPart(mkSegmentSuffixPatternPart(mkVulnPatternPart(), count))
+		return mkEncodingPatternPart(mkSegmentSuffixPatternPart(mkVulnPatternPart(), count), encoding)
 	case extractEnv:
-		return mkEscapePatternPart(mkSegmentSuffixPatternPart(mkEnvPatternPart(), count))
+		return mkEncodingPatternPart(mkSegmentSuffixPatternPart(mkEnvPatternPart(), count), encoding)
 	case extractName:
-		return mkEscapePatternPart(mkSegmentSuffixPatternPart(mkNamePatternPart(), count))
+		return mkEncodingPatternPart(mkSegmentSuffixPatternPart(mkNamePatternPart(), count), encoding)
 	case extractModule:
-		return mkEscapePatternPart(mkSegmentSuffixPatternPart(mkModulePatternPart(), count))
+		return mkEncodingPatternPart(mkSegmentSuffixPatternPart(mkModulePatternPart(), count), encoding)
 	case extractVersion:
-		return mkEscapePatternPart(mkSegmentSuffixPatternPart(mkVersionPatternPart(), count))
+		return mkEncodingPatternPart(mkSegmentSuffixPatternPart(mkVersionPatternPart(), count), encoding)
 	default:
-		return mkStringPatternPart(string(textPart))
+		return mkStringPatternPart("{" + string(textPart) + "@-" + string(countText) + "}")
 	}
 }
 
-func parseSegmentSubstringPatternPart(textPart []rune, startText, endText []rune) PatternPart {
-	start, ok := atoi(startText)
-	if !ok || start <= 0 {
-		// Invalid count; treat as a string.
-		return mkStringPatternPart("{" + string(textPart) + "@" + string(startText) + ":" + string(endText) + "}")
-	}
-	end, ok := atoi(endText)
-	if !ok || end <= 0 || start > end {
+func parseSegmentSubstringPatternPart(textPart []rune, encoding encodingType, startText, endText []rune) PatternPart {
+	start, ok1 := atoi(startText)
+	end, ok2 := atoi(endText)
+	if !ok1 || start <= 0 || !ok2 || end <= 0 || start > end {
 		// Invalid count; treat as a string.
 		return mkStringPatternPart("{" + string(textPart) + "@" + string(startText) + ":" + string(endText) + "}")
 	}
 	switch extractTextFrom(textPart) {
 	case extractVulnId:
-		return mkEscapePatternPart(mkSegmentSubstringPatternPart(mkVulnPatternPart(), start, end))
+		return mkEncodingPatternPart(mkSegmentSubstringPatternPart(mkVulnPatternPart(), start, end), encoding)
 	case extractEnv:
-		return mkEscapePatternPart(mkSegmentSubstringPatternPart(mkEnvPatternPart(), start, end))
+		return mkEncodingPatternPart(mkSegmentSubstringPatternPart(mkEnvPatternPart(), start, end), encoding)
 	case extractName:
-		return mkEscapePatternPart(mkSegmentSubstringPatternPart(mkNamePatternPart(), start, end))
+		return mkEncodingPatternPart(mkSegmentSubstringPatternPart(mkNamePatternPart(), start, end), encoding)
 	case extractModule:
-		return mkEscapePatternPart(mkSegmentSubstringPatternPart(mkModulePatternPart(), start, end))
+		return mkEncodingPatternPart(mkSegmentSubstringPatternPart(mkModulePatternPart(), start, end), encoding)
 	case extractVersion:
-		return mkEscapePatternPart(mkSegmentSubstringPatternPart(mkVersionPatternPart(), start, end))
+		return mkEncodingPatternPart(mkSegmentSubstringPatternPart(mkVersionPatternPart(), start, end), encoding)
 	default:
-		return mkStringPatternPart(string(textPart))
+		return mkStringPatternPart("{" + string(textPart) + "@" + string(startText) + ":" + string(endText) + "}")
 	}
 }
 
@@ -384,15 +383,15 @@ const (
 func extractTextFrom(runes []rune) extractType {
 	text := string(runes)
 	switch text {
-	case "ENVIRON":
+	case "ENVIRON", "%ENVIRON":
 		return extractEnv
-	case "MODULE":
+	case "MODULE", "%MODULE":
 		return extractModule
-	case "NAME":
+	case "NAME", "%NAME":
 		return extractName
-	case "VERSION":
+	case "VERSION", "%VERSION":
 		return extractVersion
-	case "VULN":
+	case "VULN", "%VULN":
 		return extractVulnId
 	default:
 		return extractNone
@@ -405,10 +404,22 @@ func mkStringPatternPart(s string) PatternPart {
 	}
 }
 
-func mkEscapePatternPart(p PatternPart) PatternPart {
-	return func(purl *packageurl.PackageURL, vulnId string) string {
-		s := p(purl, vulnId)
-		return url.QueryEscape(s)
+type encodingType int
+
+const (
+	encodingNone encodingType = iota
+	encodingPercent
+)
+
+func mkEncodingPatternPart(p PatternPart, encoding encodingType) PatternPart {
+	switch encoding {
+	case encodingPercent:
+		return func(purl *packageurl.PackageURL, vulnId string) string {
+			s := p(purl, vulnId)
+			return url.QueryEscape(s)
+		}
+	default:
+		return p
 	}
 }
 
@@ -567,14 +578,13 @@ func splitSegments(ver string) []string {
 }
 
 func atoi(runes []rune) (int, bool) {
+	// Note: the parser logic makes it so that the runes are all digits.
+	if len(runes) == 0 {
+		return 0, false
+	}
 	n := 0
-	found := false
 	for _, r := range runes {
-		if r < '0' || r > '9' {
-			return 0, false
-		}
-		found = true
 		n = n*10 + int(r-'0')
 	}
-	return n, found
+	return n, true
 }

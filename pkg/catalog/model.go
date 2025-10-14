@@ -16,12 +16,14 @@ type VexCatalogDoc struct {
 }
 
 type CatalogMetadata struct {
-	Comment     string   `json:"$comment,omitempty"`
-	Id          string   `json:"id"`
-	Authors     []string `json:"authors"`
-	LastUpdated time.Time
+	Comment     string    `json:"$comment,omitempty"`
+	Id          string    `json:"id"`
+	Authors     []string  `json:"authors"`
+	LastUpdated time.Time `json:"last_updated"`
 }
 
+// Catalog contains the data for a single catalog entry in the vex-catalog schema.
+// This is a union of the contents of different catalog kinds.
 type Catalog struct {
 	Comment           string                  `json:"$comment,omitempty"`
 	Kind              string                  `json:"kind"`
@@ -29,7 +31,7 @@ type Catalog struct {
 	FileFormat        VexFileFormat           `json:"file_format"`
 	VulnerabilityType string                  `json:"vulnerability_type,omitempty"`
 	URL               string                  `json:"url,omitempty"`
-	URLTemplate       *template.Pattern
+	URLTemplate       *template.Pattern       `json:"url_template,omitempty"`
 }
 
 type VexFileFormat struct {

@@ -11,7 +11,7 @@
     "properties": {
         "$schema": {
             "type": "string",
-            "const": "https://github.com/groboclown/vex-catalog-go/blob/main/vex-catalog.v1_0.schema.json",
+            "const": "https://raw.githubusercontent.com/groboclown/vex-catalog-go/refs/heads/main/vex-catalog.v1_0.schema.json",
             "description": "The VEX catalog schema ID."
         },
         "$comment": { "$ref": "#/$defs/Comment" },
@@ -94,6 +94,34 @@
                     ]
                 },
                 "url_template": { "$ref": "#/$defs/TemplateUrl" }
+            }
+        },
+
+        "Catalog-VexRepo": {
+            "type": "object",
+            "title": "VEX Repository Catalog",
+            "description": "Stores VEX documents indexed by vulnerability identifier and / or the PURL components, as per the vex repo spec.",
+            "additionalProperties": false,
+            "required": [
+                "kind",
+                "url"
+            ],
+            "properties": {
+                "$comment": { "$ref": "#/$defs/Comment" },
+                "kind": {
+                    "type": "string",
+                    "const": "vex-repo",
+                    "description": "Indicates that this catalog contains multiple VEX documents, indexed by vulnerability identifier and / or the PURL components."
+                },
+                "url": {
+                    "type": "string",
+                    "format": "uri",
+                    "description": "The URL where the VEX repository manifest lives.",
+                    "examples": [
+                        "https://example.com/vex-repository.json",
+                        "https://raw.githubusercontent.com/aquasecurity/vexhub/refs/heads/main/vex-repository.json"
+                    ]
+                }
             }
         },
 

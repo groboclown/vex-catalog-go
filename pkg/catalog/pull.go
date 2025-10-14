@@ -1,37 +1,15 @@
 package catalog
 
 import (
-	"net/http"
+	"io"
 	"strings"
 
-	"github.com/groboclown/vex-catalog-go/pkg"
 	"github.com/package-url/packageurl-go"
 )
 
-func (c *Catalog) LoadVex(
-	client http.Client,
-	purl *packageurl.PackageURL,
-	vulnId string,
-) (*pkg.VexDocument, error) {
-	if !c.MatchesPurl(purl) || !c.MatchesVulnerability(vulnId) {
-		return nil, nil
-	}
-	url := c.URL
-	if c.URLTemplate != nil {
-		url = c.URLTemplate.Evaluate(purl, vulnId)
-	}
-	if url != "" {
-		resp, err := client.Get(c.URL)
-		if err != nil {
-			return nil, err
-		}
-		defer resp.Body.Close()
-		if resp.StatusCode != http.StatusOK {
-			return nil, nil
-		}
-		return LoadVexFromReader(resp.Body, c.FileFormat.Standard, c.FileFormat.Version, c.FileFormat.Compression)
-	}
-	return nil, nil
+type VexReference struct {
+	Reader io.ReadCloser
+	Format VexFileFormat
 }
 
 // MatchesPurl checks if the given purl matches any of the catalog's purls.
