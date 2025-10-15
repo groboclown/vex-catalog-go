@@ -8,10 +8,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/groboclown/vex-catalog-go/pkg"
-	"github.com/groboclown/vex-catalog-go/pkg/internal"
-	"github.com/groboclown/vex-catalog-go/pkg/internal/archive"
-	"github.com/groboclown/vex-catalog-go/pkg/vexloader"
+	"github.com/groboclown/vex-catalog-go/vexcatalog"
+	"github.com/groboclown/vex-catalog-go/vexcatalog/internal"
+	"github.com/groboclown/vex-catalog-go/vexcatalog/internal/archive"
+	"github.com/groboclown/vex-catalog-go/vexcatalog/vexloader"
 	"github.com/package-url/packageurl-go"
 )
 
@@ -29,7 +29,7 @@ type VexRepositoryArchiveUrlLoader[T any] struct {
 	mutex          sync.Mutex
 }
 
-var _ pkg.VexLoader[int] = (*VexRepositoryArchiveUrlLoader[int])(nil)
+var _ vexcatalog.VexLoader[int] = (*VexRepositoryArchiveUrlLoader[int])(nil)
 
 func NewVexRepositoryArchiveUrlLoader[T any](
 	loader vexloader.VexMarshaller[T],

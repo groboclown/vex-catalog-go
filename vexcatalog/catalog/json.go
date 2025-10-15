@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/groboclown/vex-catalog-go/pkg/catalog/template"
-	"github.com/groboclown/vex-catalog-go/pkg/internal"
+	"github.com/groboclown/vex-catalog-go/vexcatalog/catalog/template"
+	"github.com/groboclown/vex-catalog-go/vexcatalog/internal"
 	"github.com/package-url/packageurl-go"
 )
 

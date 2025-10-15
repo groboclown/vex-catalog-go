@@ -7,10 +7,10 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/groboclown/vex-catalog-go/pkg"
-	"github.com/groboclown/vex-catalog-go/pkg/cache"
-	"github.com/groboclown/vex-catalog-go/pkg/vexloader"
-	"github.com/groboclown/vex-catalog-go/pkg/vexrepo"
+	"github.com/groboclown/vex-catalog-go/vexcatalog"
+	"github.com/groboclown/vex-catalog-go/vexcatalog/cache"
+	"github.com/groboclown/vex-catalog-go/vexcatalog/vexloader"
+	"github.com/groboclown/vex-catalog-go/vexcatalog/vexrepo"
 	"github.com/package-url/packageurl-go"
 )
 
@@ -42,11 +42,11 @@ func main() {
 	}
 	defer loader.Close()
 
-	docs, errs := pkg.CollectVexDocuments(
+	docs, errs := vexcatalog.CollectVexDocuments(
 		context.Background(),
 		&purl,
 		"",
-		[]pkg.VexLoader[*vexloader.VexDocument]{loader},
+		[]vexcatalog.VexLoader[*vexloader.VexDocument]{loader},
 	)
 	if len(errs) > 0 {
 		panic(errors.Join(errs...))

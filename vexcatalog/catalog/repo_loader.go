@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/groboclown/vex-catalog-go/pkg"
-	"github.com/groboclown/vex-catalog-go/pkg/cache"
-	"github.com/groboclown/vex-catalog-go/pkg/vexloader"
-	"github.com/groboclown/vex-catalog-go/pkg/vexrepo"
+	"github.com/groboclown/vex-catalog-go/vexcatalog"
+	"github.com/groboclown/vex-catalog-go/vexcatalog/cache"
+	"github.com/groboclown/vex-catalog-go/vexcatalog/vexloader"
+	"github.com/groboclown/vex-catalog-go/vexcatalog/vexrepo"
 )
 
 // NewVexRepoCatalogLoader creates a new VEX catalog loader for a VEX repository-style catalog.
@@ -16,7 +16,7 @@ func NewVexRepoCatalogLoader[T any](
 	loader vexloader.VexMarshaller[T],
 	cache cache.PackageCacheFactory,
 	client http.Client,
-) (pkg.VexLoader[T], error) {
+) (vexcatalog.VexLoader[T], error) {
 	if catalog == nil {
 		return nil, nil
 	}

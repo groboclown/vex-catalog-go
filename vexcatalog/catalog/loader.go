@@ -4,9 +4,9 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/groboclown/vex-catalog-go/pkg"
-	"github.com/groboclown/vex-catalog-go/pkg/cache"
-	"github.com/groboclown/vex-catalog-go/pkg/vexloader"
+	"github.com/groboclown/vex-catalog-go/vexcatalog"
+	"github.com/groboclown/vex-catalog-go/vexcatalog/cache"
+	"github.com/groboclown/vex-catalog-go/vexcatalog/vexloader"
 )
 
 func NewVexCatalogLoader[T any](
@@ -15,11 +15,11 @@ func NewVexCatalogLoader[T any](
 	cache cache.PackageCacheFactory,
 	updateInterval time.Duration,
 	client http.Client,
-) (*pkg.ProxyVexLoader[T], error) {
+) (*vexcatalog.ProxyVexLoader[T], error) {
 	if doc == nil {
 		return nil, nil
 	}
-	loaders := make([]pkg.VexLoader[T], 0, len(doc.Catalogs))
+	loaders := make([]vexcatalog.VexLoader[T], 0, len(doc.Catalogs))
 	for _, catalog := range doc.Catalogs {
 		switch catalog.Kind {
 		case "single":
@@ -45,7 +45,7 @@ func NewVexCatalogLoader[T any](
 	if len(loaders) == 0 {
 		return nil, nil
 	}
-	return pkg.NewProxyVexLoader(loaders...), nil
+	return vexcatalog.NewProxyVexLoader(loaders...), nil
 }
 
 // VexCatalogLoaderFromUrl creates a new VEX catalog loader by fetching the catalog from the URL.
@@ -56,7 +56,7 @@ func VexCatalogLoaderFromUrl[T any](
 	cache cache.PackageCacheFactory,
 	updateInterval time.Duration,
 	client http.Client,
-) (*pkg.ProxyVexLoader[T], error) {
+) (*vexcatalog.ProxyVexLoader[T], error) {
 	resp, err := client.Get(catalogUrl)
 	if err != nil {
 		return nil, err

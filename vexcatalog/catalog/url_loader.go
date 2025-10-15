@@ -6,10 +6,10 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/groboclown/vex-catalog-go/pkg"
-	"github.com/groboclown/vex-catalog-go/pkg/cache"
-	"github.com/groboclown/vex-catalog-go/pkg/internal"
-	"github.com/groboclown/vex-catalog-go/pkg/vexloader"
+	"github.com/groboclown/vex-catalog-go/vexcatalog"
+	"github.com/groboclown/vex-catalog-go/vexcatalog/cache"
+	"github.com/groboclown/vex-catalog-go/vexcatalog/internal"
+	"github.com/groboclown/vex-catalog-go/vexcatalog/vexloader"
 	"github.com/package-url/packageurl-go"
 )
 
@@ -22,7 +22,7 @@ type VexUrlCatalogLoader[T any] struct {
 	client         http.Client
 }
 
-var _ pkg.VexLoader[int] = (*VexUrlCatalogLoader[int])(nil)
+var _ vexcatalog.VexLoader[int] = (*VexUrlCatalogLoader[int])(nil)
 
 // NewVexUrlCatalogLoader creates a new VEX catalog loader for a catalog that pulls from a URL.
 func NewVexUrlCatalogLoader[T any](

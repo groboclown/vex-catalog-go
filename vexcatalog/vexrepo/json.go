@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/groboclown/vex-catalog-go/pkg/internal"
+	"github.com/groboclown/vex-catalog-go/vexcatalog/internal"
 )
 
 func VexRepositoryFromJsonBytes(data []byte) (*VexRepository, error) {

@@ -1,4 +1,4 @@
-package pkg
+package vexcatalog
 
 import (
 	"context"

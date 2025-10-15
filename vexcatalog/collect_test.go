@@ -1,4 +1,4 @@
-package pkg_test
+package vexcatalog_test
 
 import (
 	"context"
@@ -7,7 +7,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/groboclown/vex-catalog-go/pkg"
+	"github.com/groboclown/vex-catalog-go/vexcatalog"
 	"github.com/package-url/packageurl-go"
 )
 
@@ -71,7 +71,7 @@ func equalUnordered(a, b []string) bool {
 func Test_CollectVexDocuments_NoLoaders(t *testing.T) {
 	ctx := context.Background()
 	purl, _ := packageurl.FromString("pkg:npm/%40angular/animation@12.3.1")
-	results, errs := pkg.CollectVexDocuments[string](ctx, &purl, "VULN-1", nil)
+	results, errs := vexcatalog.CollectVexDocuments[string](ctx, &purl, "VULN-1", nil)
 
 	if len(results) != 0 {
 		t.Errorf("expected no results, got %v", results)
@@ -95,8 +95,8 @@ func Test_CollectVexDocuments_MultipleLoaders(t *testing.T) {
 		errs:    []error{errors.New("e2"), errors.New("e3")},
 	}
 
-	loaders := []pkg.VexLoader[string]{loader1, loader2}
-	results, errs := pkg.CollectVexDocuments(ctx, &purl, "ID-42", loaders)
+	loaders := []vexcatalog.VexLoader[string]{loader1, loader2}
+	results, errs := vexcatalog.CollectVexDocuments(ctx, &purl, "ID-42", loaders)
 
 	// Verify both loaders were invoked
 	if !loader1.called || !loader2.called {
@@ -145,9 +145,9 @@ func Test_CollectVexDocuments_ConcurrentSafety(t *testing.T) {
 	for i := range n {
 		loader.results[i] = fmt.Sprintf("%d", i)
 	}
-	loaders := []pkg.VexLoader[string]{loader}
+	loaders := []vexcatalog.VexLoader[string]{loader}
 
-	results, errs := pkg.CollectVexDocuments(ctx, &purl, "C-100", loaders)
+	results, errs := vexcatalog.CollectVexDocuments(ctx, &purl, "C-100", loaders)
 
 	if len(errs) != 0 {
 		t.Errorf("expected no errors, got %v", errs)
@@ -181,9 +181,9 @@ func Test_CollectVexDocuments_Proxy(t *testing.T) {
 		errs:    []error{errors.New("e2"), errors.New("e3")},
 	}
 
-	loaders := []pkg.VexLoader[string]{loader1, loader2}
-	proxy := pkg.NewProxyVexLoader(loaders...)
-	results, errs := pkg.CollectVexDocuments(ctx, &purl, "ID-42", []pkg.VexLoader[string]{proxy})
+	loaders := []vexcatalog.VexLoader[string]{loader1, loader2}
+	proxy := vexcatalog.NewProxyVexLoader(loaders...)
+	results, errs := vexcatalog.CollectVexDocuments(ctx, &purl, "ID-42", []vexcatalog.VexLoader[string]{proxy})
 
 	// Verify both loaders were invoked
 	if !loader1.called || !loader2.called {

@@ -4,8 +4,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/groboclown/vex-catalog-go/pkg/cache"
-	"github.com/groboclown/vex-catalog-go/pkg/vexloader"
+	"github.com/groboclown/vex-catalog-go/vexcatalog/cache"
+	"github.com/groboclown/vex-catalog-go/vexcatalog/vexloader"
 	"github.com/package-url/packageurl-go"
 )
 

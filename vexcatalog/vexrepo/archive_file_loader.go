@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/groboclown/vex-catalog-go/pkg"
-	"github.com/groboclown/vex-catalog-go/pkg/internal/archive"
-	"github.com/groboclown/vex-catalog-go/pkg/vexloader"
+	"github.com/groboclown/vex-catalog-go/vexcatalog"
+	"github.com/groboclown/vex-catalog-go/vexcatalog/internal/archive"
+	"github.com/groboclown/vex-catalog-go/vexcatalog/vexloader"
 	"github.com/package-url/packageurl-go"
 )
 
@@ -19,7 +19,7 @@ type VexRepositoryArchiveFileLoader[T any] struct {
 	archive archive.ArchiveStore
 }
 
-var _ pkg.VexLoader[int] = (*VexRepositoryArchiveFileLoader[int])(nil)
+var _ vexcatalog.VexLoader[int] = (*VexRepositoryArchiveFileLoader[int])(nil)
 
 func NewVexRepositoryArchiveFileLoader[T any](
 	loader vexloader.VexMarshaller[T],

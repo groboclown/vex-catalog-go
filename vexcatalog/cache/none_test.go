@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/groboclown/vex-catalog-go/pkg/cache"
+	"github.com/groboclown/vex-catalog-go/vexcatalog/cache"
 	"github.com/package-url/packageurl-go"
 )
 

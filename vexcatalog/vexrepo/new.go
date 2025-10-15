@@ -5,10 +5,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/groboclown/vex-catalog-go/pkg"
-	"github.com/groboclown/vex-catalog-go/pkg/cache"
-	"github.com/groboclown/vex-catalog-go/pkg/internal/archive"
-	"github.com/groboclown/vex-catalog-go/pkg/vexloader"
+	"github.com/groboclown/vex-catalog-go/vexcatalog"
+	"github.com/groboclown/vex-catalog-go/vexcatalog/cache"
+	"github.com/groboclown/vex-catalog-go/vexcatalog/internal/archive"
+	"github.com/groboclown/vex-catalog-go/vexcatalog/vexloader"
 )
 
 // NewVexRepositoryLoader creates a VEX repository loader for the given VEX repository.
@@ -20,7 +20,7 @@ func NewVexRepositoryLoader[T any](
 	loader vexloader.VexMarshaller[T],
 	cache cache.PackageCacheFactory,
 	client http.Client,
-) (pkg.VexLoader[T], bool) {
+) (vexcatalog.VexLoader[T], bool) {
 	if repo == nil || len(repo.Versions) == 0 {
 		return nil, false
 	}
