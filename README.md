@@ -48,10 +48,11 @@ The implementation does not attempt to construct a unified idea of a VEX stateme
 
 The library requires you to provide several things:
 
-* An instance of the `net/http/Client` class.  `http.Client
-* A cache implementation.
-
-(TODO)
+* An instance of the `net/http/Client` class.  `http.DefaultClient` will work.
+* A cache implementation.  Out of the box, you can use the [`NoneCacheFactory`](vexcatalog/cache/none.go) to skip caching.  Future versions may provide implementations.
+* A custom [`VexMarshaller`](vexcatalog/vexloader/model.go), which can read the VEX documents in the provided reader and turn them into a structure your program can handle.  The [vexhub example](example/vexhub/main.go) shows how to use the internal support for common VEX documents.  Your application may use this, and perform additional transformations to turn it into other structures.
+* Create a catalog loader.  If you know your underlying loader type, you can create it directly.  If you're using the catalog schema (recommended, as that's kind of the point of this repository), you can call [`VexCatalogLoaderFromUrl()`](vexcatalog/catalog/loader.go) to pull the JSON file from a URL.
+* Call the [`CollectVexDocuments()`](vexcatalog/collect.go) function for each PURL and vulnerability ID to get the affected VEX documents.
 
 ## Missing Functionality
 

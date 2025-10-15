@@ -32,4 +32,4 @@ vet:
 
 
 example_vexhub:
-	$(GO) run ./pkg/example/vexhub/main.go
+	$(GO) run ./example/vexhub/main.go
