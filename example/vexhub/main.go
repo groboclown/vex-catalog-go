@@ -22,7 +22,6 @@ func main() {
 	}
 
 	client := http.DefaultClient
-	cache := &cache.NoneCacheFactory{}
 	repoDoc, _, err := vexrepo.DownloadJsonVexRepository(
 		"https://raw.githubusercontent.com/aquasecurity/vexhub/refs/heads/main/vex-repository.json",
 		*client,
@@ -31,10 +30,20 @@ func main() {
 		panic(err)
 	}
 
+	// Create a VEX repository loader for the VEX repository document.
+	// The loader reads from the repository, using the cache where
+	// possible, and the HTTP client for downloading documents.
+	// It extracts the corresponding VEX documents using the
+	// everythingMarshaller, which transforms the documents pulled
+	// into *vexloader.VexDocument objects.
+	// The cache here uses the no-op cache.
+	// The HTTP client allows for replacing with a custom client,
+	// such as for testing or for adding additional functionality
+	// where needed.
 	loader, ok := vexrepo.NewVexRepositoryLoader(
 		repoDoc,
 		everythingMarshaller{},
-		cache,
+		cache.None,
 		*client,
 	)
 	if !ok {
@@ -44,14 +53,19 @@ func main() {
 
 	docs, errs := vexcatalog.CollectVexDocuments(
 		context.Background(),
-		&purl,
-		"",
+		&purl, // Filter documents by this package URL
+		"",    // Do not filter by any vulnerability ID
+
+		// Use the constructed loader from above.
+		// The loader uses generics based on the type of the
+		// everythingLoader, which returns *vexloader.VexDocument
+		// objects.
 		[]vexcatalog.VexLoader[*vexloader.VexDocument]{loader},
 	)
 	if len(errs) > 0 {
 		panic(errors.Join(errs...))
 	}
-	fmt.Println("Found ", len(docs), "documents")
+	fmt.Println("Found", len(docs), "documents")
 	for _, doc := range docs {
 		if doc == nil {
 			continue
@@ -77,4 +91,9 @@ var _ vexloader.VexMarshaller[*vexloader.VexDocument] = everythingMarshaller{}
 
 func (e everythingMarshaller) LoadVex(r io.Reader, standard, version, compression string) (*vexloader.VexDocument, error) {
 	return vexloader.LoadVexFromReader(r, standard, version, compression)
+}
+
+// For testing
+func RunExample() {
+	main()
 }

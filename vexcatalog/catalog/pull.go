@@ -29,5 +29,5 @@ func (c *Catalog) MatchesVulnerability(vulnId string) bool {
 	if c.VulnerabilityType == "" || vulnId == "" {
 		return true
 	}
-	return strings.HasPrefix(c.VulnerabilityType, strings.ToLower(vulnId))
+	return strings.HasPrefix(strings.ToLower(vulnId), c.VulnerabilityType)
 }

@@ -22,7 +22,7 @@ func NewVexRepositoryUrlLoader[T any](
 	loader vexloader.VexMarshaller[T],
 	version *VexRepositoryVersion,
 	location *VexRepositoryLocation,
-	cache cache.PackageCacheFactory,
+	cache cache.PackageCache,
 	client http.Client,
 ) *VexRepoIndexLoader[T] {
 	interval, err := version.ParseUpdateInterval()

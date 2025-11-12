@@ -7,6 +7,8 @@ import (
 	"net/http/httptest"
 	"testing"
 	"time"
+
+	"github.com/groboclown/vex-catalog-go/vexcatalog/cache"
 )
 
 type errTransport struct{}
@@ -34,7 +36,23 @@ func Test_UrlModGet_Status404(t *testing.T) {
 
 	client := srv.Client()
 	body, _, err := UrlModGet(srv.URL, *client)
-	if err == nil || err.Error() != "failed to get "+srv.URL+": 404 Not Found" {
+	if err == nil || !errors.Is(err, cache.NotAvailable) {
+		t.Fatalf("expected error message, found %v", err)
+	}
+	if body != nil {
+		t.Fatal("expected nil body on status error")
+	}
+}
+
+func Test_UrlModGet_Status500(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Error(w, "server error", 500)
+	}))
+	defer srv.Close()
+
+	client := srv.Client()
+	body, _, err := UrlModGet(srv.URL, *client)
+	if err == nil || err.Error() != "failed to get "+srv.URL+": 500 Internal Server Error" {
 		t.Fatalf("expected error message, found %v", err)
 	}
 	if body != nil {

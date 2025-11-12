@@ -5,6 +5,8 @@ import (
 	"io"
 	"net/http"
 	"time"
+
+	"github.com/groboclown/vex-catalog-go/vexcatalog/cache"
 )
 
 // UrlModGet is like http.Get, but uses the provided HttpClient interface for making the request.
@@ -18,6 +20,9 @@ func UrlModGet(url string, client http.Client) (io.ReadCloser, time.Time, error)
 	}
 	if resp.StatusCode != http.StatusOK {
 		resp.Body.Close()
+		if resp.StatusCode == http.StatusNotFound {
+			return nil, time.Time{}, cache.NotAvailable
+		}
 		return nil, time.Time{}, fmt.Errorf("failed to get %s: %s", url, resp.Status)
 	}
 	updatedAt := time.Now()

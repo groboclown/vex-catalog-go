@@ -14,7 +14,7 @@ import (
 type VexRepoIndexLoader[T any] struct {
 	loader       vexloader.VexMarshaller[T]
 	indexCache   IndexCache
-	packageCache cache.PackageCacheFactory
+	packageCache cache.PackageCache
 }
 
 var _ vexcatalog.VexLoader[int] = (*VexRepoIndexLoader[int])(nil)
@@ -28,7 +28,7 @@ type IndexCache interface {
 func NewVexRepoIndexLoader[T any](
 	loader vexloader.VexMarshaller[T],
 	indexCache IndexCache,
-	packageCache cache.PackageCacheFactory,
+	packageCache cache.PackageCache,
 ) *VexRepoIndexLoader[T] {
 	return &VexRepoIndexLoader[T]{
 		loader:       loader,

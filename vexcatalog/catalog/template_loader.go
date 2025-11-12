@@ -13,7 +13,7 @@ import (
 func NewVexTemplateCatalogLoader[T any](
 	catalog *Catalog,
 	loader vexloader.VexMarshaller[T],
-	cache cache.PackageCacheFactory,
+	cache cache.PackageCache,
 	updateInterval time.Duration,
 	client http.Client,
 ) *VexUrlCatalogLoader[T] {

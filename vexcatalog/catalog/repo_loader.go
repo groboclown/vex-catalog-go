@@ -14,7 +14,7 @@ import (
 func NewVexRepoCatalogLoader[T any](
 	catalog *Catalog,
 	loader vexloader.VexMarshaller[T],
-	cache cache.PackageCacheFactory,
+	cache cache.PackageCache,
 	client http.Client,
 ) (vexcatalog.VexLoader[T], error) {
 	if catalog == nil {

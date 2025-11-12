@@ -18,7 +18,7 @@ import (
 func NewVexRepositoryLoader[T any](
 	repo *VexRepository,
 	loader vexloader.VexMarshaller[T],
-	cache cache.PackageCacheFactory,
+	cache cache.PackageCache,
 	client http.Client,
 ) (vexcatalog.VexLoader[T], bool) {
 	if repo == nil || len(repo.Versions) == 0 {

@@ -10,25 +10,14 @@ import (
 // NoneCacheFactory is a cache factory that does not cache anything.
 type NoneCacheFactory struct{}
 
-var _ PackageCacheFactory = (*NoneCacheFactory)(nil)
+// None the no-op cache factory.
+var None PackageCache = (*NoneCacheFactory)(nil)
 
 func (n *NoneCacheFactory) Cache(
 	pkg packageurl.PackageURL,
 	updateInterval time.Duration,
-	pull func() (io.ReadCloser, time.Time, error),
-) (PackageCache, error) {
-	return &noneCache{puller: pull}, nil
-}
-
-type noneCache struct {
-	puller func() (io.ReadCloser, time.Time, error)
-}
-
-var _ PackageCache = (*noneCache)(nil)
-
-func (n *noneCache) Get() (io.ReadCloser, error) {
-	r, _, e := n.puller()
+	pull DocumentPuller,
+) (io.ReadCloser, error) {
+	r, _, e := pull()
 	return r, e
 }
-
-func (n *noneCache) Flush() {}

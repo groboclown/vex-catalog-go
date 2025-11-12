@@ -17,7 +17,7 @@ type VexUrlCatalogLoader[T any] struct {
 	loader         vexloader.VexMarshaller[T]
 	catalog        *Catalog
 	urlGetter      func(purl *packageurl.PackageURL, vulnId string) string
-	cache          cache.PackageCacheFactory
+	cache          cache.PackageCache
 	updateInterval time.Duration
 	client         http.Client
 }
@@ -29,7 +29,7 @@ func NewVexUrlCatalogLoader[T any](
 	catalog *Catalog,
 	loader vexloader.VexMarshaller[T],
 	urlGetter func(purl *packageurl.PackageURL, vulnId string) string,
-	cache cache.PackageCacheFactory,
+	cache cache.PackageCache,
 	updateInterval time.Duration,
 	client http.Client,
 ) *VexUrlCatalogLoader[T] {
@@ -56,15 +56,10 @@ func (v *VexUrlCatalogLoader[T]) LoadVex(
 	if !v.catalog.MatchesPurl(purl) || !v.catalog.MatchesVulnerability(vulnId) {
 		return
 	}
-	entry, err := v.cache.Cache(*purl, v.updateInterval, func() (io.ReadCloser, time.Time, error) {
+	body, err := v.cache.Cache(*purl, v.updateInterval, func() (io.ReadCloser, time.Time, error) {
 		url := v.urlGetter(purl, vulnId)
 		return internal.UrlModGet(url, v.client)
 	})
-	if err != nil {
-		errChan <- err
-		return
-	}
-	body, err := entry.Get()
 	if err != nil {
 		errChan <- err
 		return

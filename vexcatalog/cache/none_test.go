@@ -17,42 +17,33 @@ func Test_NoneCacheFactory(t *testing.T) {
 		pullerCalled = true
 		return &ReadCloserSpy{}, time.Now(), nil
 	}
-	cache, err := f.Cache(pkg, time.Minute, puller)
+	r, err := f.Cache(pkg, time.Minute, puller)
 	if err != nil {
-		t.Fatalf("expected no error, got %v", err)
-	}
-	if cache == nil {
-		t.Fatal("expected a cache instance, got nil")
-	}
-	if pullerCalled {
-		t.Fatal("expected puller not to be called during cache creation")
-	}
-
-	// Test Get method
-	pullerCalled = false
-	r, err := cache.Get()
-	if err != nil {
-		t.Fatalf("expected no error from Get, got %v", err)
+		t.Fatalf("expected no error, found %v", err)
 	}
 	if r == nil {
-		t.Fatal("expected a ReadCloser from Get, got nil")
+		t.Fatal("expected a reader instance, found nil")
 	}
 	if !pullerCalled {
-		t.Fatal("expected puller to be called during Get")
+		t.Fatal("expected pull to be called, but it was not")
 	}
 	rcSpy, ok := r.(*ReadCloserSpy)
 	if !ok {
 		t.Fatal("expected ReadCloser to be of type ReadCloserSpy")
 	}
 	if rcSpy.ReadCount != 0 {
-		t.Fatalf("expected ReadCount to be 0, got %d", rcSpy.ReadCount)
+		t.Fatalf("expected ReadCount to be 0, found %d", rcSpy.ReadCount)
 	}
 	if rcSpy.CloseCount != 0 {
-		t.Fatalf("expected CloseCount to be 0, got %d", rcSpy.CloseCount)
+		t.Fatalf("expected CloseCount to be 0, found %d", rcSpy.CloseCount)
 	}
-
-	// Test Flush method (should be a no-op)
-	cache.Flush()
+	err = r.Close()
+	if err != nil {
+		t.Fatalf("expected no error on close, found %v", err)
+	}
+	if rcSpy.CloseCount != 1 {
+		t.Fatalf("expected CloseCount to be 1 after close, found %d", rcSpy.CloseCount)
+	}
 }
 
 type ReadCloserSpy struct {

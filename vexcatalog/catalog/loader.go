@@ -12,7 +12,7 @@ import (
 func NewVexCatalogLoader[T any](
 	doc *VexCatalogDoc,
 	loader vexloader.VexMarshaller[T],
-	cache cache.PackageCacheFactory,
+	cache cache.PackageCache,
 	updateInterval time.Duration,
 	client http.Client,
 ) (*vexcatalog.ProxyVexLoader[T], error) {
@@ -53,7 +53,7 @@ func NewVexCatalogLoader[T any](
 func VexCatalogLoaderFromUrl[T any](
 	catalogUrl string,
 	loader vexloader.VexMarshaller[T],
-	cache cache.PackageCacheFactory,
+	cache cache.PackageCache,
 	updateInterval time.Duration,
 	client http.Client,
 ) (*vexcatalog.ProxyVexLoader[T], error) {
